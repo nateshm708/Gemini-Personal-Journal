@@ -11,8 +11,9 @@ A production-grade, user-authenticated journaling web application combining **Fi
 | **User Identity** | Firebase Authentication | Google Federated Sign-In (no emails/passwords stored or handled by app code). |
 | **Database** | Cloud Firestore | Isolated document storage scoped to `/users/{userId}/interactions/{interactionId}`. |
 | **AI Reasoning** | Gemini 3.6 Flash API | Multi-turn contextual reflections, executive summarization, and brainstorming. |
+| **Geographic Context** | Google Maps Platform | Map rendering and interactive location pinning via `@vis.gl/react-google-maps`. |
 | **Backend Proxy** | Express.js + Vite | Full-stack server running on port `3000` with strict body parsing and API key isolation. |
-| **Secret Management** | Secret Manager / Env Vars | Secure storage and runtime injection of `GEMINI_API_KEY`. |
+| **Secret Management** | Secret Manager / Env Vars | Secure storage and runtime injection of `GEMINI_API_KEY` and `VITE_GOOGLE_MAPS_API_KEY`. |
 
 ---
 
@@ -52,6 +53,19 @@ gcloud secrets add-iam-policy-binding GEMINI_API_KEY \
   --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
 ```
+
+### Google Maps Platform API Key Setup
+
+For interactive location pinning and map display:
+
+1. **Free Zero-Billing Demo Key (Prototyping)**:
+   Obtain a free Google Maps Demo Key from [Google Maps Platform Demo Key Portal](https://mapsplatform.google.com/maps-demo-key?utm_campaign=gmp_mcp_codeassist_v1_aistudio). No cloud billing or credit card required.
+2. **Production API Key**:
+   Create a restricted Maps JavaScript API key in the Google Cloud Console. Set HTTP referrer restrictions matching your Cloud Run or custom domain URL.
+3. Configure `VITE_GOOGLE_MAPS_API_KEY` in `.env`:
+   ```bash
+   VITE_GOOGLE_MAPS_API_KEY=YOUR_MAPS_API_KEY
+   ```
 
 ---
 

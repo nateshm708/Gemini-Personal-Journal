@@ -42,6 +42,14 @@ export interface MoodSentiment {
   summary: string; // brief 1-sentence emotional essence
 }
 
+export interface PinnedLocation {
+  name: string; // Descriptive place or landmark name
+  address?: string; // Formatted address or region
+  lat: number; // Latitude
+  lng: number; // Longitude
+  placeId?: string; // Google Place ID if resolved via Places API
+}
+
 export interface JournalInteraction {
   id: string;
   userId: string;
@@ -51,6 +59,7 @@ export interface JournalInteraction {
   turns: JournalTurn[];
   aiSummary?: string;
   mood?: MoodSentiment;
+  location?: PinnedLocation;
   tags?: string[];
   createdAt: string;
   updatedAt: string;

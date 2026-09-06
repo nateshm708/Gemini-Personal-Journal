@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { JournalInteraction, JournalTurn, ReflectionMode, MoodSentiment } from '../types';
+import { JournalInteraction, JournalTurn, ReflectionMode, MoodSentiment, PinnedLocation } from '../types';
 import { FormattedContent } from './FormattedContent';
+import { LocationPickerModal } from './LocationPickerModal';
 import { stripMarkdown } from '../utils/sanitize';
 import {
   Sparkles,
@@ -15,6 +16,7 @@ import {
   Compass,
   AlertCircle,
   Heart,
+  MapPin,
 } from 'lucide-react';
 
 interface JournalEditorProps {
@@ -41,6 +43,8 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
   const [turns, setTurns] = useState<JournalTurn[]>([]);
   const [aiSummary, setAiSummary] = useState<string>('');
   const [mood, setMood] = useState<MoodSentiment | undefined>(initialInteraction?.mood);
+  const [location, setLocation] = useState<PinnedLocation | undefined>(initialInteraction?.location);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState<boolean>(false);
   const [isAnalyzingMood, setIsAnalyzingMood] = useState<boolean>(false);
   const [followUpText, setFollowUpText] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -58,6 +62,7 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
       setTurns(initialInteraction.turns || []);
       setAiSummary(initialInteraction.aiSummary || '');
       setMood(initialInteraction.mood);
+      setLocation(initialInteraction.location);
       setLastSavedTime(initialInteraction.updatedAt || initialInteraction.createdAt);
       setGenerationError(null);
       onClearError();
@@ -70,6 +75,7 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
       setTurns([]);
       setAiSummary('');
       setMood(undefined);
+      setLocation(undefined);
       setLastSavedTime(null);
       setGenerationError(null);
       onClearError();
@@ -197,6 +203,7 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
         turns: newTurns,
         aiSummary: activeMode === 'summary' ? data.reply : aiSummary,
         mood: data.mood || mood,
+        location,
         tags: [activeMode],
         createdAt: initialInteraction?.createdAt || now,
         updatedAt: now,
@@ -250,6 +257,7 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
           turns,
           aiSummary,
           mood: data.mood,
+          location,
           tags: [mode],
           createdAt: initialInteraction?.createdAt || now,
           updatedAt: now,
@@ -281,6 +289,7 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
       turns,
       aiSummary,
       mood,
+      location,
       tags: [mode],
       createdAt: initialInteraction?.createdAt || now,
       updatedAt: now,
@@ -290,6 +299,30 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
     if (success) {
       setLastSavedTime(now);
       onClearError();
+    }
+  };
+
+  const handleSaveLocation = async (newLocation: PinnedLocation | undefined) => {
+    setLocation(newLocation);
+    // If entry already has content, save immediately to persist the location change
+    if (entryText.trim() || title.trim()) {
+      const now = new Date().toISOString();
+      const updatedPayload: JournalInteraction = {
+        id: entryId,
+        userId,
+        title: title.trim() || `Reflections on ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+        entryText,
+        mode,
+        turns,
+        aiSummary,
+        mood,
+        location: newLocation,
+        tags: [mode],
+        createdAt: initialInteraction?.createdAt || now,
+        updatedAt: now,
+      };
+      await onSaveInteraction(updatedPayload);
+      setLastSavedTime(now);
     }
   };
 
@@ -376,10 +409,46 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
               maxLength={150}
               className="w-full text-3xl sm:text-4xl italic font-normal font-serif text-[#1a1a1a] placeholder-[#a8a297] bg-transparent border-none focus:outline-none tracking-tight"
             />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="font-sans text-[10px] sm:text-xs uppercase tracking-[0.2em] text-[#a8a297]">
-                Current Session — ID_{entryId.slice(-6).toUpperCase()}
-              </p>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-sans text-[10px] sm:text-xs uppercase tracking-[0.2em] text-[#a8a297]">
+                  Current Session — ID_{entryId.slice(-6).toUpperCase()}
+                </p>
+                {location ? (
+                  <div
+                    id="editor-pinned-location-badge"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xs border border-[#dcd6c9] bg-[#f7f5f0] text-[#1a1a1a] text-xs font-sans shadow-2xs group cursor-pointer hover:bg-[#ede8df] transition-colors"
+                    onClick={() => setIsLocationModalOpen(true)}
+                    title={`Pinned: ${location.name}${location.address ? ` (${location.address})` : ''}. Click to view or edit on Google Map.`}
+                  >
+                    <MapPin className="w-3.5 h-3.5 text-amber-800 shrink-0" />
+                    <span className="font-medium max-w-[200px] truncate">{location.name}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSaveLocation(undefined);
+                      }}
+                      className="text-[#a8a297] hover:text-red-700 ml-1 p-0.5 rounded-xs"
+                      title="Remove pinned location"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    id="btn-open-pin-location"
+                    type="button"
+                    onClick={() => setIsLocationModalOpen(true)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xs border border-dashed border-[#dcd6c9] text-[#6b665c] hover:text-[#1a1a1a] hover:border-[#1a1a1a] text-[11px] font-sans transition-colors cursor-pointer"
+                    title="Pin a geographic location to this reflection"
+                  >
+                    <MapPin className="w-3 h-3 text-[#a8a297]" />
+                    <span>+ Pin Location</span>
+                  </button>
+                )}
+              </div>
+
               {mood && (
                 <div
                   id="editor-mood-badge"
@@ -672,6 +741,68 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
                 )}
               </div>
 
+              {/* Pinned Location Card */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-[11px] font-sans font-bold uppercase text-[#1a1a1a]">
+                    Pinned Location
+                  </p>
+                  {location && (
+                    <span className="w-2 h-2 rounded-full bg-amber-600" />
+                  )}
+                </div>
+                {location ? (
+                  <div className="p-3 rounded-sm border border-[#e5e1da] bg-[#fdfcfb] space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-serif font-medium text-[#1a1a1a]">
+                            {location.name}
+                          </p>
+                          {location.address && (
+                            <p className="text-[11px] text-[#6b665c] font-sans">
+                              {location.address}
+                            </p>
+                          )}
+                          <p className="text-[10px] font-mono text-[#a8a297] mt-0.5">
+                            {location.lat.toFixed(4)}°, {location.lng.toFixed(4)}°
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1 border-t border-[#f0ece1]">
+                      <button
+                        type="button"
+                        onClick={() => setIsLocationModalOpen(true)}
+                        className="text-[11px] font-sans text-amber-800 hover:text-amber-950 underline cursor-pointer"
+                      >
+                        Change on Map
+                      </button>
+                      <span className="text-[#dcd6c9]">·</span>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveLocation(undefined)}
+                        className="text-[11px] font-sans text-red-600 hover:text-red-800 cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsLocationModalOpen(true)}
+                    className="w-full p-2.5 rounded-sm border border-dashed border-[#dcd6c9] hover:border-[#1a1a1a] bg-[#fdfcfb] hover:bg-[#f7f5f0] text-left transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-2 text-xs font-sans text-[#6b665c] group-hover:text-[#1a1a1a]">
+                      <MapPin className="w-3.5 h-3.5 text-[#a8a297] group-hover:text-[#1a1a1a]" />
+                      <span>Attach a location pin...</span>
+                    </div>
+                  </button>
+                )}
+              </div>
+
               <div>
                 <p className="text-[11px] font-sans font-bold uppercase mb-1 text-[#1a1a1a]">
                   Active Mode
@@ -708,6 +839,14 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
           </div>
         </div>
       </aside>
+
+      {/* Location Picker Modal */}
+      <LocationPickerModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        currentLocation={location}
+        onSaveLocation={handleSaveLocation}
+      />
     </div>
   );
 };

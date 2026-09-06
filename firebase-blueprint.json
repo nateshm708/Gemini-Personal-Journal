@@ -41,6 +41,10 @@
           "type": "object",
           "description": "Gemini analyzed mood and sentiment indicator with label, score, emoji, and color tone"
         },
+        "location": {
+          "type": "object",
+          "description": "Pinned geographic location with name, address, lat, lng, and optional placeId"
+        },
         "tags": {
           "type": "array",
           "description": "User or AI derived tags for organizing entries"

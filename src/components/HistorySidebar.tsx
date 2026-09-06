@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { JournalInteraction, ReflectionMode } from '../types';
-import { Search, Plus, Trash2, X, Sparkles, Heart } from 'lucide-react';
+import { Search, Plus, Trash2, X, Sparkles, Heart, MapPin } from 'lucide-react';
 
 interface HistorySidebarProps {
   entries: JournalInteraction[];
@@ -262,8 +262,17 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                     </div>
 
                     <div className="flex items-center justify-between mt-2 font-sans text-[10px] tracking-widest uppercase text-[#a8a297]">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span>{formatDate(entry.createdAt)}</span>
+                        {entry.location && (
+                          <span
+                            className="inline-flex items-center gap-0.5 text-[9px] text-[#78716c] max-w-[85px] truncate font-sans normal-case"
+                            title={`Location: ${entry.location.name}${entry.location.address ? ` (${entry.location.address})` : ''}`}
+                          >
+                            <MapPin className="w-2.5 h-2.5 text-amber-800 shrink-0" />
+                            <span className="truncate">{entry.location.name}</span>
+                          </span>
+                        )}
                         {entry.mood ? (
                           <span
                             className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs text-[9px] font-sans font-medium capitalize"
