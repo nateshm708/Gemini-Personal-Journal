@@ -1,0 +1,6 @@
+{
+  "name": "Gemini Journal & Reflection",
+  "description": "User-authenticated journaling and reflective AI companion powered by Firebase Auth, Cloud Firestore, and Gemini 3.6 Flash.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

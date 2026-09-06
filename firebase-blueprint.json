@@ -1,0 +1,68 @@
+{
+  "entities": {
+    "Interaction": {
+      "title": "Interaction",
+      "description": "User journal entry or reflection conversation turn with Gemini AI",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique interaction identifier"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owning user"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Title or topic of the journal reflection"
+        },
+        "entryText": {
+          "type": "string",
+          "maxLength": 10000,
+          "description": "Initial or main journal entry content"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["reflection", "summary", "brainstorm", "deep_dive"],
+          "description": "Reflection mode requested by the user"
+        },
+        "turns": {
+          "type": "array",
+          "description": "Conversation turns between user and Gemini"
+        },
+        "aiSummary": {
+          "type": "string",
+          "maxLength": 5000,
+          "description": "Gemini generated summary or key takeaways"
+        },
+        "mood": {
+          "type": "object",
+          "description": "Gemini analyzed mood and sentiment indicator with label, score, emoji, and color tone"
+        },
+        "tags": {
+          "type": "array",
+          "description": "User or AI derived tags for organizing entries"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["id", "userId", "title", "entryText", "mode", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/interactions/{interactionId}": {
+      "schema": {
+        "$ref": "#/entities/Interaction"
+      },
+      "description": "User-isolated collection of journal reflections and Gemini conversation turns"
+    }
+  }
+}
